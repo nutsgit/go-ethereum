@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -188,7 +189,13 @@ func (n *Node) Start() error {
 			return &DuplicateServiceError{Kind: kind}
 		}
 		services[kind] = service
+
+		n.log.Info("--->> servicetype =" + kind.String() + ", protocol length =" + strconv.Itoa(len(service.Protocols())))
+		for _, protocol := range service.Protocols() {
+			n.log.Info("--->> protocol.Name = " + protocol.Name + ", Version =" + strconv.Itoa(int(protocol.Version)))
+		}
 	}
+
 	// Gather the protocols and start the freshly assembled P2P server
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
