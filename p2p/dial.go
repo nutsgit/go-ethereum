@@ -60,6 +60,7 @@ type TCPDialer struct {
 
 // Dial creates a TCP connection to the node
 func (t TCPDialer) Dial(dest *enode.Node) (net.Conn, error) {
+	log.Info("--->> dialing destination TCP address: " + dest.IP().String())
 	addr := &net.TCPAddr{IP: dest.IP(), Port: dest.TCP()}
 	return t.Dialer.Dial("tcp", addr.String())
 }

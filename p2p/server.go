@@ -433,6 +433,7 @@ func (s *sharedUDPConn) Close() error {
 // Start starts running the server.
 // Servers can not be re-used after stopping.
 func (srv *Server) Start() (err error) {
+	fmt.Println("--->> Server.Start ...")
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
 	if srv.running {
@@ -474,6 +475,7 @@ func (srv *Server) Start() (err error) {
 	)
 
 	if !srv.NoDiscovery || srv.DiscoveryV5 {
+		log.Info("--->> p2p enable discoverty")
 		addr, err := net.ResolveUDPAddr("udp", srv.ListenAddr)
 		if err != nil {
 			return err
@@ -495,12 +497,14 @@ func (srv *Server) Start() (err error) {
 	}
 
 	if !srv.NoDiscovery && srv.DiscoveryV5 {
+		log.Info("--->> p2p sharing UDP Connection")
 		unhandled = make(chan discover.ReadPacket, 100)
 		sconn = &sharedUDPConn{conn, unhandled}
 	}
 
 	// node table
 	if !srv.NoDiscovery {
+		log.Info("--->> p2p discover.ListenUDP")
 		cfg := discover.Config{
 			PrivateKey:   srv.PrivateKey,
 			AnnounceAddr: realaddr,
@@ -517,6 +521,7 @@ func (srv *Server) Start() (err error) {
 	}
 
 	if srv.DiscoveryV5 {
+		log.Info("--->> p2p discv5.ListenUDP")
 		var (
 			ntab *discv5.Network
 			err  error
@@ -544,6 +549,9 @@ func (srv *Server) Start() (err error) {
 	for _, p := range srv.Protocols {
 		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.cap())
 	}
+
+	log.Info("--->> p2p srv.ListenAddr = " + srv.ListenAddr)
+
 	// listen/dial
 	if srv.ListenAddr != "" {
 		if err := srv.startListening(); err != nil {
@@ -556,6 +564,8 @@ func (srv *Server) Start() (err error) {
 
 	srv.loopWG.Add(1)
 	go srv.run(dialer)
+	log.Info("--->> p2p server.Start end. ")
+
 	return nil
 }
 
@@ -565,6 +575,9 @@ func (srv *Server) startListening() error {
 	if err != nil {
 		return err
 	}
+
+	srv.log.Info("--->> start listening at address " + srv.ListenAddr)
+
 	laddr := listener.Addr().(*net.TCPAddr)
 	srv.ListenAddr = laddr.String()
 	srv.listener = listener
@@ -589,6 +602,7 @@ type dialer interface {
 }
 
 func (srv *Server) run(dialstate dialer) {
+	log.Info("--->> p2p server.run .... ")
 	defer srv.loopWG.Done()
 	var (
 		peers        = make(map[enode.ID]*Peer)
@@ -634,6 +648,7 @@ func (srv *Server) run(dialstate dialer) {
 		}
 	}
 
+	log.Info("--->> p2p server.run running ... ")
 running:
 	for {
 		scheduleTasks()
